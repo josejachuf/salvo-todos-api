@@ -24,7 +24,7 @@ async fn hello(res: &mut Response) {
 #[openapi(
     paths(
         list_todos,
-        // todo::create_todo,
+        create_todo,
         // todo::delete_todo,
         // todo::mark_done
     ),
@@ -95,7 +95,7 @@ pub async fn serve_swagger(req: &mut Request, depot: &mut Depot, res: &mut Respo
 
 #[utoipa::path(
     get,
-    path = "/todos",
+    path = "/api/todos",
     responses(
         (status = 200, description = "List all todos successfully", body = [models::Todo])
     )
@@ -113,6 +113,15 @@ pub async fn list_todos(req: &mut Request, res: &mut Response) {
     res.render(Json(todos));
 }
 
+#[utoipa::path(
+        post,
+        path = "/api/todos",
+        request_body = models::Todo,
+        responses(
+            (status = 201, description = "Todo created successfully", body = models::Todo),
+            (status = 409, description = "Todo already exists", body = models::TodoError, example = json!(models::TodoError::Config(String::from("id = 1"))))
+        )
+    )]
 #[handler]
 pub async fn create_todo(req: &mut Request, res: &mut Response) {
     let new_todo = req.parse_body::<Todo>().await.unwrap();
@@ -172,6 +181,7 @@ pub async fn delete_todo(req: &mut Request, res: &mut Response) {
 
 mod models {
     use serde::{Deserialize, Serialize};
+    use serde_json::json;
     use tokio::sync::Mutex;
     use utoipa::ToSchema;
 
@@ -179,6 +189,14 @@ mod models {
 
     pub fn new_store() -> Db {
         Mutex::new(Vec::new())
+    }
+
+    #[derive(Serialize, Deserialize, ToSchema)]
+    pub(super) enum TodoError {
+        /// Happens when Todo item alredy exists
+        Config(String),
+        /// Todo not found from storage
+        NotFound(String),
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]

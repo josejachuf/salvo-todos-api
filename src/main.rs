@@ -49,7 +49,7 @@ pub(crate) async fn start_server() {
             .push(Router::with_path("<id>").put(update_todo).delete(delete_todo))
         )
         .push(Router::with_path("/api-doc/openapi.json").get(openapi_json))
-        .push(Router::with_path("/swagger-ui/*").hoop(affix::inject(config)).get(serve_swagger))
+        .push(Router::with_path("/swagger-ui/<*>").hoop(affix::inject(config)).get(serve_swagger))
         ;
 
     Server::new(TcpListener::bind("127.0.0.1:7878"))
@@ -77,11 +77,10 @@ pub async fn serve_swagger(req: &mut Request, depot: &mut Depot, res: &mut Respo
                 res.set_body(ResBody::Once(file.bytes.to_vec().into()));
             })
             .unwrap_or_else(|| {
-                res.render("unwrap_or_else");
+                res.set_status_code(StatusCode::NOT_FOUND);
             }),
         Err(_error) => {
-            res.set_status_code(StatusCode::from_u16(500).unwrap());
-            res.render("error");
+            res.set_status_code(StatusCode::INTERNAL_SERVER_ERROR);
         }
     }
 }

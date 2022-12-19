@@ -10,6 +10,7 @@ use salvo::http::response::ResBody;
 use self::models::*;
 
 use utoipa::OpenApi;
+use utoipa_swagger_ui::Config;
 
 static STORE: Lazy<Db> = Lazy::new(new_store);
 
@@ -38,7 +39,7 @@ async fn main() {
 }
 
 pub(crate) async fn start_server() {
-    let config = Arc::new(utoipa_swagger_ui::Config::from("/api-doc/openapi.json"));
+    let config = Arc::new(Config::from("/api-doc/openapi.json"));
 
     let router = Router::with_path("api")
         .push(Router::with_path("todos")
@@ -48,11 +49,9 @@ pub(crate) async fn start_server() {
             .push(Router::with_path("<id>").put(update_todo).delete(delete_todo))
         )
         .push(Router::with_path("/api-doc/openapi.json").get(openapi_json))
-        // .push(Router::with_path("/swagger-ui/*").hoop(affix::inject(config)).get(serve_swagger))
+        .push(Router::with_path("/swagger-ui/*").hoop(affix::inject(config)).get(serve_swagger))
         ;
 
-    // let acceptor = TcpListener::new("127.0.0.1:7878").bind().await;
-    // Server::new(acceptor).serve(router).await;
     Server::new(TcpListener::bind("127.0.0.1:7878"))
         .serve(router)
         .await;
@@ -75,7 +74,7 @@ pub async fn serve_swagger(req: &mut Request, depot: &mut Depot, res: &mut Respo
             .map(|file| {
                 res.headers_mut()
                     .insert(header::CONTENT_TYPE, HeaderValue::from_str(&file.content_type).unwrap());
-                res.set_body(ResBody::Once(file.bytes.to_vec()));
+                res.set_body(ResBody::Once(file.bytes.to_vec().into()));
                 // res.render("OK");
             })
             .unwrap_or_else(|| {

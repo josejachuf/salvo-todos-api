@@ -39,7 +39,7 @@ async fn main() {
 }
 
 pub(crate) async fn start_server() {
-    let config = Arc::new(Config::from("/api-doc/openapi.json"));
+    let config = Arc::new(Config::from("/api/api-doc/openapi.json"));
 
     let router = Router::with_path("api")
         .push(Router::with_path("todos")
@@ -49,7 +49,7 @@ pub(crate) async fn start_server() {
             .push(Router::with_path("<id>").put(update_todo).delete(delete_todo))
         )
         .push(Router::with_path("/api-doc/openapi.json").get(openapi_json))
-        .push(Router::with_path("/swagger-ui/<*>").hoop(affix::inject(config)).get(serve_swagger))
+        .push(Router::with_path("/swagger-ui").hoop(affix::inject(config)).get(serve_swagger))
         ;
 
     Server::new(TcpListener::bind("127.0.0.1:7878"))

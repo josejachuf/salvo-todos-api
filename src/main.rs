@@ -29,7 +29,7 @@ async fn hello(res: &mut Response) {
         // todo::mark_done
     ),
     components(
-        schemas(models::Todo)
+        schemas(models::Todo, models::TodoError)
     ),
     // modifiers(&SecurityAddon),
     tags(
@@ -181,7 +181,6 @@ pub async fn delete_todo(req: &mut Request, res: &mut Response) {
 
 mod models {
     use serde::{Deserialize, Serialize};
-    use serde_json::json;
     use tokio::sync::Mutex;
     use utoipa::ToSchema;
 
@@ -201,7 +200,9 @@ mod models {
 
     #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
     pub struct Todo {
+        #[schema(example = 1)]
         pub id: u64,
+        #[schema(example = "Buy coffee")]
         pub text: String,
         pub completed: bool,
     }
@@ -228,7 +229,7 @@ mod tests {
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
         let client = Client::new();
         let resp = client
-            .post("http://127.0.0.1:7878/todos")
+            .post("http://127.0.0.1:7878/api/todos")
             .json(&test_todo())
             .send()
             .await
@@ -236,7 +237,7 @@ mod tests {
 
         assert_eq!(resp.status(), StatusCode::CREATED);
         let resp = client
-            .post("http://127.0.0.1:7878/todos")
+            .post("http://127.0.0.1:7878/api/todos")
             .json(&test_todo())
             .send()
             .await

@@ -67,7 +67,7 @@ pub async fn serve_swagger(req: &mut Request, depot: &mut Depot, res: &mut Respo
 
     let config = depot.obtain::<Arc<Config>>().unwrap();
     let path = req.uri().path();
-    let tail = path.strip_prefix("/swagger-ui").unwrap();
+    let tail = path.strip_prefix("/api/swagger-ui").unwrap();
 
     match utoipa_swagger_ui::serve(tail, config.clone()) {
         Ok(swagger_file) => swagger_file
@@ -75,7 +75,6 @@ pub async fn serve_swagger(req: &mut Request, depot: &mut Depot, res: &mut Respo
                 res.headers_mut()
                     .insert(header::CONTENT_TYPE, HeaderValue::from_str(&file.content_type).unwrap());
                 res.set_body(ResBody::Once(file.bytes.to_vec().into()));
-                // res.render("OK");
             })
             .unwrap_or_else(|| {
                 res.render("unwrap_or_else");

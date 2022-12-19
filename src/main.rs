@@ -14,6 +14,12 @@ use utoipa_swagger_ui::Config;
 
 static STORE: Lazy<Db> = Lazy::new(new_store);
 
+
+#[handler]
+async fn hello(res: &mut Response) {
+    res.render("Hello");
+}
+
 #[derive(OpenApi)]
 #[openapi(
     paths(
@@ -39,17 +45,18 @@ async fn main() {
 }
 
 pub(crate) async fn start_server() {
-    let config = Arc::new(Config::from("/api/api-doc/openapi.json"));
+    let config = Arc::new(Config::from("/api-doc/openapi.json"));
 
-    let router = Router::with_path("api")
-        .push(Router::with_path("todos")
-            .hoop(size_limiter::max_size(1024 * 16))
-            .get(list_todos)
-            .post(create_todo)
-            .push(Router::with_path("<id>").put(update_todo).delete(delete_todo))
-        )
+    let router = Router::new().get(hello)
+        .push(Router::with_path("api")
+            .push(Router::with_path("todos")
+                .hoop(size_limiter::max_size(1024 * 16))
+                .get(list_todos)
+                .post(create_todo)
+                .push(Router::with_path("<id>").put(update_todo).delete(delete_todo))
+            ))
         .push(Router::with_path("/api-doc/openapi.json").get(openapi_json))
-        .push(Router::with_path("/swagger-ui").hoop(affix::inject(config)).get(serve_swagger))
+        .push(Router::with_path("/swagger-ui/<**>").hoop(affix::inject(config)).get(serve_swagger))
         ;
 
     Server::new(TcpListener::bind("127.0.0.1:7878"))
@@ -67,7 +74,8 @@ pub async fn serve_swagger(req: &mut Request, depot: &mut Depot, res: &mut Respo
 
     let config = depot.obtain::<Arc<Config>>().unwrap();
     let path = req.uri().path();
-    let tail = path.strip_prefix("/api/swagger-ui").unwrap();
+    // let tail = path.strip_prefix("/swagger-ui").unwrap();
+    let tail = path.strip_prefix("/swagger-ui/").unwrap();
 
     match utoipa_swagger_ui::serve(tail, config.clone()) {
         Ok(swagger_file) => swagger_file

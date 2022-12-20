@@ -30,7 +30,7 @@ async fn hello(res: &mut Response) {
         list_todos,
         create_todo,
         delete_todo,
-        // todo::mark_done
+        update_todo,
     ),
     components(
         schemas(models::Todo, models::TodoError)
@@ -156,6 +156,17 @@ pub async fn create_todo(req: &mut Request, res: &mut Response) {
     res.set_status_code(StatusCode::CREATED);
 }
 
+#[utoipa::path(
+        put,
+        path = "/api/todos/{id}",
+        responses(
+            (status = 200, description = "Todo modified successfully"),
+            (status = 404, description = "Todo not found", body = TodoError, example = json!(TodoError::NotFound(String::from("id = 1"))))
+        ),
+        params(
+            ("id" = i32, Path, description = "Id of todo item to modify")
+        )
+    )]
 #[handler]
 pub async fn update_todo(req: &mut Request, res: &mut Response) {
     let id = req.param::<u64>("id").unwrap();

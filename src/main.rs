@@ -9,7 +9,11 @@ use salvo::http::response::ResBody;
 
 use self::models::*;
 
-use utoipa::OpenApi;
+// use utoipa::OpenApi;
+use utoipa::{
+    openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
+    Modify, OpenApi,
+};
 use utoipa_swagger_ui::Config;
 
 static STORE: Lazy<Db> = Lazy::new(new_store);
@@ -31,12 +35,24 @@ async fn hello(res: &mut Response) {
     components(
         schemas(models::Todo, models::TodoError)
     ),
-    // modifiers(&SecurityAddon),
+    modifiers(&SecurityAddon),
     tags(
         (name = "todo", description = "Todo items management endpoints.")
     )
 )]
 struct ApiDoc;
+
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let components = openapi.components.as_mut().unwrap(); // we can unwrap safely since there already is components registered.
+        components.add_security_scheme(
+            "api_key",
+            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("todo_apikey"))),
+        )
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -74,7 +90,6 @@ pub async fn serve_swagger(req: &mut Request, depot: &mut Depot, res: &mut Respo
 
     let config = depot.obtain::<Arc<Config>>().unwrap();
     let path = req.uri().path();
-    // let tail = path.strip_prefix("/swagger-ui").unwrap();
     let tail = path.strip_prefix("/swagger-ui/").unwrap();
 
     match utoipa_swagger_ui::serve(tail, config.clone()) {

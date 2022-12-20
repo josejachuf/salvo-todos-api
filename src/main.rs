@@ -29,7 +29,7 @@ async fn hello(res: &mut Response) {
     paths(
         list_todos,
         create_todo,
-        // todo::delete_todo,
+        delete_todo,
         // todo::mark_done
     ),
     components(
@@ -175,6 +175,21 @@ pub async fn update_todo(req: &mut Request, res: &mut Response) {
     res.set_status_code(StatusCode::NOT_FOUND);
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/todos/{id}",
+    responses(
+        (status = 200, description = "Todo deleted successfully"),
+        (status = 401, description = "Unauthorized to delete Todo"),
+        (status = 404, description = "Todo not found", body = TodoError, example = json!(TodoError::NotFound(String::from("id = 1"))))
+    ),
+    params(
+        ("id" = i32, Path, description = "Id of todo item to delete")
+    ),
+    security(
+        ("api_key" = [])
+    )
+)]
 #[handler]
 pub async fn delete_todo(req: &mut Request, res: &mut Response) {
     let id = req.param::<u64>("id").unwrap();

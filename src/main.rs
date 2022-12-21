@@ -112,7 +112,7 @@ pub async fn serve_swagger(req: &mut Request, depot: &mut Depot, res: &mut Respo
     get,
     path = "/api/todos",
     responses(
-        (status = 200, description = "List all todos successfully", body = [models::Todo])
+        (status = 200, description = "List all todos successfully", body = [Todo])
     )
 )]
 #[handler]
@@ -133,8 +133,8 @@ pub async fn list_todos(req: &mut Request, res: &mut Response) {
         path = "/api/todos",
         request_body = models::Todo,
         responses(
-            (status = 201, description = "Todo created successfully", body = models::Todo),
-            (status = 409, description = "Todo already exists", body = models::TodoError, example = json!(models::TodoError::Config(String::from("id = 1"))))
+            (status = 201, description = "Todo created successfully", body = Todo),
+            (status = 409, description = "Todo already exists", body = TodoError, example = json!(TodoError::Config(String::from("id = 1"))))
         )
     )]
 #[handler]
